@@ -1,0 +1,31 @@
+class Quantum extends Object {
+    Quantum() { 
+        super();
+    }
+
+    (boolean -> Vec<boolean>) not() {
+        return (boolean i) -> if (i == false) {
+                                  mreturn true
+                              }
+                              else {
+                                  mreturn false
+                              };
+    }
+
+    (boolean -> Vec<boolean>) hadamard() {
+        return (boolean b) -> 
+            if (b == false) {
+                (ComplexHalf $* mreturn false) 
+                 mplus 
+                (ComplexHalf $* mreturn true)
+            } else {
+                (ComplexHalf $* mreturn false) 
+                 mplus 
+                (ComplexMHalf $* mreturn true)
+            };
+    }
+}
+
+let qop = new Quantum() 
+in
+  (mreturn true) >>= qop.hadamard();

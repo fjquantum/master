@@ -1,0 +1,58 @@
+class QOp extends Object {
+    QOp() { 
+        super();
+    }
+
+    (boolean -> Vec<boolean>) not() {
+        return (boolean i) -> if (i == false) {
+                                  mreturn true
+                              }
+                              else {
+                                  mreturn false
+                              };
+    }
+
+    (boolean -> Vec<boolean>) hadamard() {
+        return (boolean b) -> 
+            if (b == false) {
+                (ComplexHalf $* mreturn false) 
+                 mplus 
+                (ComplexHalf $* mreturn true)
+            } else {
+                (ComplexHalf $* mreturn false) 
+                 mplus 
+                (ComplexMHalf $* mreturn true)
+            };
+    }
+
+    ({boolean,boolean} -> Vec<{boolean,boolean}>) controlledNot() {
+        return ({boolean,boolean} b) -> 
+            if (b.1 == true) {
+                if (b.2 == true) {
+                    mreturn {true, false}
+                } else {
+                    mreturn {true, true}
+                }
+            } else {
+                mreturn {b.1,b.2}
+            };
+    }
+
+}
+
+class QExec<T extends Object> extends Object {
+    Vec<T> state;
+
+    QExec(Vec<T> state) { 
+        super();
+        this.state = state;
+    }
+
+    Vec<T> executa() {
+        return let qop = new QOp() in
+            (this.state) >>= qop.controlledNot();
+    }
+}
+
+new QExec<{boolean,boolean}>(mreturn {true,true}).executa();
+

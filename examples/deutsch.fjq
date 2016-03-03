@@ -1,0 +1,91 @@
+class QOp extends Object {
+    QOp() { 
+        super();
+    }
+
+    (boolean -> Vec<boolean>) not() {
+        return (boolean i) -> if (i == false) {
+                                  mreturn true
+                              }
+                              else {
+                                  mreturn false
+                              };
+    }
+
+    (boolean -> Vec<boolean>) hadamard() {
+        return (boolean b) -> 
+            if (b == false) {
+                (ComplexHalf $* mreturn false) 
+                 mplus 
+                (ComplexHalf $* mreturn true)
+            } else {
+                (ComplexHalf $* mreturn false) 
+                 mplus
+                (ComplexMHalf $* mreturn true)
+            };
+    }
+
+    ({boolean,boolean} -> Vec<{boolean,boolean}>) controlledNot() {
+        return ({boolean,boolean} b) -> 
+            if (b.1 == true) {
+                if (b.2 == true) {
+                    mreturn {true, false}
+                } else {
+                    mreturn {true, true}
+                }
+            } else {
+                mreturn {b.1,b.2}
+            };
+    }
+
+}
+
+class QExec<T extends Object> extends Object {
+    Vec<T> state;
+
+    QExec(Vec<T> state) { 
+        super();
+        this.state = state;
+    }
+
+    ({boolean,boolean} -> Vec<{boolean,boolean}>) blackbox((boolean -> boolean) f) {
+        return ({boolean,boolean} state) -> 
+                   if (state.2 == (f).invoke(state.1)) {
+                       mreturn {state.1,false}
+                   }
+                   else {
+                       mreturn {state.1,true}
+                   };
+    }
+
+    ({boolean,boolean} -> Vec<{boolean,boolean}>) hadtb() {
+        return let qop = new QOp() in
+            ({boolean,boolean} state) -> 
+              ((qop.hadamard()).invoke(state.1)) >>= 
+                (boolean ta) -> 
+                  ((qop.hadamard()).invoke(state.2)) >>= 
+                    (boolean ba) -> mreturn {ta,ba};
+            
+    }
+
+    Vec<T> deutsch((boolean -> boolean) f) {
+        return (((this.state) >>= 
+                 this.hadtb()) >>= 
+                   this.blackbox(f)) >>= 
+                     this.hadtb();
+    }
+
+    Vec<T> deutsch2((boolean -> boolean) f) {
+        return let qop = new QOp() in
+               (((this.state) >>= 
+                 this.hadtb()) >>= 
+                   this.blackbox(f)) >>= 
+                     ({boolean,boolean} tb) -> 
+                       mreturn {((qop.hadamard()).invoke(tb.1)), tb.2};
+    }
+
+}
+
+let fun = (boolean b) -> true in
+new QExec<{boolean,boolean}>(mreturn {false,true}).deutsch(fun);
+

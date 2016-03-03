@@ -1,0 +1,143 @@
+class QOp extends Object {
+    QOp() { 
+        super();
+    }
+
+    (boolean -> Vec<boolean>) not() {
+        return (boolean i) -> if (i == false) {
+                                  mreturn true
+                              }
+                              else {
+                                  mreturn false
+                              };
+    }
+
+    (boolean -> Vec<boolean>) hadamard() {
+        return (boolean b) -> 
+            if (b == false) {
+                (ComplexHalf $* mreturn false) 
+                 mplus 
+                (ComplexHalf $* mreturn true)
+            } else {
+                (ComplexHalf $* mreturn false) 
+                 mplus 
+                (ComplexMHalf $* mreturn true)
+            };
+    }
+
+    (boolean -> Vec<boolean>) pauliZ() {
+        return let minusone = ComplexZero - ComplexOne in
+            (boolean b) -> if (b) {
+                             minusone $* mreturn true
+                           } else {
+                             mreturn false
+                           };
+    }
+
+    ({boolean,boolean} -> Vec<{boolean,boolean}>) controlledNot() {
+        return ({boolean,boolean} b) -> 
+            if (b.1 == true) {
+                if (b.2 == true) {
+                    mreturn {true, false}
+                } else {
+                    mreturn {true, true}
+                }
+            } else {
+                mreturn {b.1,b.2}
+            };
+    }
+
+}
+
+class QExec<T extends Object> extends Object {
+    Vec<T> state;
+
+    QExec(Vec<T> state) { 
+        super();
+        this.state = state;
+    }
+
+    ({boolean,boolean,boolean} -> Vec<{boolean,boolean,boolean}>) blackbox(({boolean,boolean} -> boolean) f) {
+        return ({boolean,boolean,boolean} state) -> 
+          if (state.3 == (f).invoke({state.1,state.2})) {
+              mreturn {state.1,state.2,false}
+          } else {
+              mreturn {state.1,state.2,true}
+          };
+    }
+
+    ({boolean,boolean,boolean} -> Vec<{boolean,boolean,boolean}>) hadall() {
+        return let qop = new QOp() in
+            ({boolean,boolean,boolean} state) -> 
+              ((qop.hadamard()).invoke(state.1)) >>= 
+                (boolean fa) -> 
+                  ((qop.hadamard()).invoke(state.2)) >>= 
+                    (boolean sa) -> 
+                      ((qop.hadamard()).invoke(state.3)) >>= 
+                        (boolean ta) -> mreturn {fa,sa,ta};
+    }
+
+    ({boolean,boolean,boolean} -> Vec<{boolean,boolean,boolean}>) hadX() {
+        return let qop = new QOp() in
+            ({boolean,boolean,boolean} state) -> 
+              ((qop.hadamard()).invoke(state.1)) >>= 
+                (boolean fa) -> 
+                  ((qop.hadamard()).invoke(state.2)) >>= 
+                    (boolean sa) -> mreturn {fa,sa,state.3};
+    }
+
+    ({boolean,boolean,boolean} -> Vec<{boolean,boolean,boolean}>) hadM() {
+        return let qop = new QOp() in
+            ({boolean,boolean,boolean} state) -> 
+              ((qop.hadamard()).invoke(state.2)) >>= 
+                (boolean m) -> mreturn {state.1, m, state.3};
+    }
+
+
+    ({boolean,boolean,boolean} -> Vec<{boolean,boolean,boolean}>) notX() {
+        return let qop = new QOp() in
+            ({boolean,boolean,boolean} state) -> 
+              ((qop.not()).invoke(state.1)) >>= 
+                (boolean fa) -> 
+                  ((qop.not()).invoke(state.2)) >>= 
+                    (boolean sa) -> mreturn {fa,sa,state.3};
+    }
+
+    ({boolean,boolean,boolean} -> Vec<{boolean,boolean,boolean}>) cnot() {
+        return let qop = new QOp() in
+            ({boolean,boolean,boolean} state) -> 
+              ((qop.controlledNot()).invoke({state.1,state.2})) >>= 
+                ({boolean,boolean} x) -> mreturn {x.1,x.2,state.3};
+    }
+
+
+    Vec<T> grover(({boolean,boolean} -> boolean) f) {
+        return (((((((((this.state) >>=
+                 this.hadall()) >>=  
+                   this.blackbox(f)) >>= 
+                     this.hadX()) >>= 
+                       this.notX()) >>= 
+                         this.hadM()) >>= 
+                           this.cnot()) >>= 
+                             this.hadM()) >>= 
+                               this.notX()) >>= 
+                                 this.hadall();
+    }
+}
+
+let fun = ({boolean,boolean} b) -> if (b.1 == false) {
+                                       if (b.2 == false) {
+                                           false
+                                       } else {
+                                           false
+                                       }
+                                   } else {
+                                       if (b.2 == false) {
+                                           true
+                                       } else {
+                                           false
+                                       }
+                                   } 
+in 
+new QExec<{boolean,boolean,boolean}>(mreturn {false,false,true}).grover(fun);
+

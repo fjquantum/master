@@ -1,0 +1,16 @@
+class A extends Object {
+    A() { 
+        super();
+    }
+}
+
+let had = (boolean b) -> 
+    if (b == false) {
+        (ComplexHalf $* mreturn false) mplus (ComplexHalf $* mreturn true)
+    }
+    else {
+        (ComplexHalf $* mreturn false) mplus (ComplexMHalf $* mreturn true)
+    }
+in
+  ((mreturn false) >>= had) >>= had;
+

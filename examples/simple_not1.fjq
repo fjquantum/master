@@ -1,0 +1,15 @@
+class A extends Object {
+    A() { 
+        super();
+    }
+}
+
+let qnot = (boolean i) -> if (i == false) {
+                            mreturn true
+                          }
+                          else {
+                            mreturn false
+                          }
+in
+  (mreturn false) >>= qnot;
+
