@@ -6,4 +6,4 @@ The directory examples contains some quantum algorithms to run with this interpr
 
 To run the examples use:
 
-cat <example_file> | runghc FJInterpreter 
+cat example_file.fjq | runghc FJInterpreter 
